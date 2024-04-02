@@ -1,0 +1,23 @@
+project:
+  type: website
+
+website:
+  title: "Bernat's Blog"
+  navbar:
+    title: false
+    left:
+      - text: Home
+        href: index.html
+      # - text: About
+      #   href: about.html
+    right:
+      - text: 🌓
+format:
+  html:
+    theme:
+      light: cosmo
+      dark: [cosmo, theme-dark.scss]
+    css: styles.css
+
+
+
