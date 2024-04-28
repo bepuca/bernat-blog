@@ -1,8 +1,8 @@
 ---
 title: "Welcome To My Blog"
-author: "Tristan O'Malley"
+subtitle: Lorem ipsum dolor sit amet, consectetur adipiscing elit.
 date: "2024-03-30"
-categories: [news]
+image: ml-iteration.png
 ---
 
 This is the first post in a Quarto blog. Welcome!

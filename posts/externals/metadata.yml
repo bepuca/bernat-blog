@@ -1,27 +1,21 @@
 - path: https://medium.com/data-science-at-microsoft/a-layered-approach-to-mlops-d935beefca2e?source=friends_link&sk=acb75fa6fc74a8db7e36f4262a3b0a06
   title: "A layered approach to MLOps"
   subtitle: "A tried and tested approach to structuring ML projects"
-  image: "blog/assets/FILE.jpg"
+  image: "posts/externals/assets/layered-mlops.png"
   date: "2022-12-20"
   reading-time: 31
-  author: Medium (co-authored)
-  categories: [TODO]
 
 - path: https://towardsdatascience.com/yolov7-a-deep-dive-into-the-current-state-of-the-art-for-object-detection-ce3ffedeeaeb
   title: "YOLOv7: A Deep Dive into the Current State-of-the-Art for Object Detection"
   subtitle: "Everything you need to know to use YOLOv7 in custom training scripts"
-  image: "blog/assets/FILE.jpg"
+  image: "posts/externals/assets/yolov7.png"
   date: "2022-11-25"
   reading-time: 53
-  author: Medium (co-authored)
-  categories: [TODO]
 
 - path: https://medium.com/data-science-at-microsoft/error-analysis-for-object-detection-models-338cb6534051?source=friends_link&sk=5a631de9adcd8977e4b6ded5375d4108
   title: "Error analysis for object detection models"
   subtitle: "A systematic, data-driven approach to understanding what hinders a model’s performance"
-  image: "blog/assets/FILE.jpg"
+  image: "posts/externals/assets/obj-det-error.png"
   date: "2022-06-28"
   reading-time: 16
-  author: Medium
-  categories: [TODO]
 

@@ -1,1 +1,50 @@
 /* css styles */
+
+/* Removes the line between posts */
+div.quarto-post {
+    border-bottom: none;
+}
+
+/* Aligns metadata and title vertically instead of horizontally */
+/* div.quarto-post.image-right {
+    flex-direction: column-reverse;
+    gap: 0px;
+} */
+
+#about-header {
+    text-align: center;
+    align-items: center;
+    padding-bottom: 3rem;
+}
+
+#about-image img {
+    width: 80px;
+    border-radius: 50%;
+}
+
+.navbar-logo {
+    border-radius: 50%;
+}
+
+div.quarto-post .metadata {
+    flex-basis: 20%;
+}
+
+div.quarto-post .body {
+    flex-basis: 60%;
+}
+
+div.quarto-post .thumbnail {
+    flex-basis: 20%;
+}
+div.quarto-post .thumbnail img {
+    border-radius: 50%;
+    max-height: 150px;
+    max-width: 150px;
+    margin-top: 0;
+}
+
+div.thumbnail p {
+    margin-bottom: 0;
+    text-align: center;
+}

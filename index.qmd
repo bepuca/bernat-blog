@@ -1,16 +1,31 @@
 ---
 listing:
+ id: post-listings
  contents:
  - posts
- - posts/external.yml
+ - posts/externals/metadata.yml
  sort: "date desc"
  type: default
- categories: true
+ categories: false
  sort-ui: false
  filter-ui: false
-page-layout: full
-title-block-banner: true
+ fields: [date, title, subtitle, description, image]
+page-layout: article
 ---
+::::: {#about-header .column-body}
 
+::: {#about-image}
+![](profile.jpg)
+:::
 
-# 🚧 Under construction
+# Bernat Puig Camps
+
+At the intersection of data science and software engineering, I enjoy striving to embed machine learning into useful and usable products and tools. I am interested in all things data science.
+<br>
+Applied Machine Learning @ Microsoft
+<br>
+Opinions my own.
+:::
+
+::: {#post-listings .column-body}
+:::
