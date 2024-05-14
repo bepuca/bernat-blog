@@ -1,1 +1,1 @@
-Sitemap: https://bepuca.github.io/bernat-blog/sitemap.xml
+Sitemap: https://www.bepuca.dev/sitemap.xml
