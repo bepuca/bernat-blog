@@ -48,3 +48,19 @@ div.thumbnail p {
     margin-bottom: 0;
     text-align: center;
 }
+
+.post-thumbnail {
+    text-align: center;
+    aspect-ratio: 16/9
+}
+
+.post-thumbnail img {
+    border-radius: 50%;
+    max-width: 50%;
+}
+
+.acknowledgements {
+    font-size: small;
+    text-align: center;
+    font-style: italic;
+}

@@ -9,7 +9,7 @@ listing:
  categories: false
  sort-ui: false
  filter-ui: false
- fields: [date, title, subtitle, description, image]
+ fields: [date, title, subtitle, image]
 page-layout: article
 ---
 ::::: {#about-header .column-body}

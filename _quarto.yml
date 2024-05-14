@@ -8,11 +8,11 @@ website:
     menu: false
     logo: "profile.jpg"
     title: "Bernat Puig Camps"
-    right:
-      - icon: linkedin
-        href: https://linkedin.com/in/bepuca/
-      - icon: github
-        href: https://github.com/bepuca
+    # right:
+    #   - icon: linkedin
+    #     href: https://linkedin.com/in/bepuca/
+    #   - icon: github
+    #     href: https://github.com/bepuca
 
 format:
   html:

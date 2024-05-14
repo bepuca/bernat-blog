@@ -1,0 +1,117 @@
+---
+title: "Hypothesis Driven Development for AI Products"
+subtitle: Leveraging empirical science processes to deliver engineering projects
+date: "2024-04-14"
+image: hdd_ai_thumbnail.png
+---
+> TL;DR: This is the [Diagram](#the-diagram) that summarizes the approach.
+
+:::{.post-thumbnail}
+![](hdd_ai_thumbnail.png)
+:::
+
+## Introduction
+
+In regular software work, things usually happen as expected. You find a problem, figure out a solution, and, once implemented, it usually works fine. In machine learning, however, things are less predictable. Instead of writing out every step, we teach machines to learn tasks on their own[^1]. But this brings uncertainty. Because they can handle tasks we wouldn’t know how to code directly, we can't predict the outcome before we try. Even seasoned professionals often encounter unexpected situations.
+
+[^1]: An interesting framing of this is Karpathy's [Software 2.0](https://karpathy.medium.com/software-2-0-a64152b37c35)
+
+Due to this uncertainty, the typical methodology used in software engineering isn't enough for machine learning projects. We need to add a more scientific approach to our toolkit: formulating hypotheses about potential solutions and then validating them. Only once a solution is proven effective can we trust that it solves our problem. This approach is known as **Hypothesis Driven Development**. Sometimes it is
+also referred as **Continuous Experimentation**.
+
+The aim of this post is to offer guidance on how to implement this approach: a conceptual compass to help navigate the uncertainty while increasing the chances of success. In other words, it's about maximizing the possibility of creating machine learning-powered products that have an impact in the real world.
+
+To illustrate the process discussed here, we will consider two examples. One from the world of computer vision and the other from the world of Large Language Models:
+- Detect defects in a production line.
+- Answer user questions related to a company’s internal documents.
+
+:::{.callout-note}
+Hypothesis-driven development is not new. Some teams even use it for projects unrelated to AI, employing it to manage uncertainty[^2]. The distinction lies in the type of uncertainty addressed: rather than focusing on whether the software functions correctly, they're more concerned with how certain product features impact outcomes (like whether a new landing page boost conversions).
+:::
+
+[^2]: This [Thoughtworks article](https://www.thoughtworks.com/insights/articles/how-implement-hypothesis-driven-development) is a good introduction.
+
+## Problem Definition
+
+People often start a new project with a rough idea of what they want to achieve. These ideas tend look like the examples introduced above. These definitions might be good high-level goals, but they are too vague to be actionable. We cannot know if we are successful or not. Thus, the **first and most important step towards a successful project is to crystallize the problem definition**. The situation will improve dramatically if we aim for the following three:
+
+- **Evaluation dataset** – Imagine your ideal system as a black box. What inputs would you give it, and what outputs would you expect? Gathering these input-output pairs for all relevant scenarios is essential. Though it may be tedious and time-consuming, it's arguably the most critical part of the project. Without it, you're essentially flying blind. Investing time here will pay off ample dividends.
+- **Evaluators** – Once the system produces outputs based on the evaluation dataset, you need to assess how close these outputs are to the desired ones. Evaluators quantify this closeness by generating metrics from pairs of actual and desired outputs. We may have multiple evaluators if we care about different things.[^3]
+- **Success Criteria** – What is the minimum performance we require to trust the system enough to use it in the real world.
+
+[^3]: [Your AI Product Needs Evals](https://hamel.dev/blog/posts/evals/) is a good deeper dive into evaluators.
+
+After going through the (painful but valuable) process, the illustrative examples now might look like this:
+
+- Detect if there is any scratch in the iPhone 13 screen before assembling it to the phone. We require at most 0.5% False Negatives and 5% False Positives. We will evaluate using a dataset of 1000 picture-label pairs. Pictures are photos of screens. Labels indicate if the given screen is scratched or not.
+- Given an employee question, fetch the document sections that answer it. We require at least 80% average section recall and at least 30% average section precision. We will evaluate using a dataset of 100 questions and section set pairs.
+
+As you may realize, these problem definitions give us a clear target and a clear way to know if we hit the target.
+
+:::{.callout-caution}
+Task performance metrics aren't the only considerations; there could be other factors like latency or cost. For example, a perfect prediction that takes 5 minutes wouldn't be practical on a production line.
+:::
+
+## The Inner Loop
+
+Once the problem is clear, we can start working on the solution. This is an iterative process that is often referred as the Inner Loop because there is no live interaction with the outside world. The steps are the following:
+
+1. **Formulate a hypothesis** – What can we try that might improve the results and move us closer to our goal? Looking at the results of the previous iteration, reading relevant material and discussing with colleagues are always safe bets to come up with new ideas.
+2. **Run an experiment** – Develop the artifacts to validate the hypothesis. This usually includes code and/or data. We may need to train a model or inject context to a Large Language Model prompt. If we need to do so, we will need data (and it cannot be our evaluation set). Thus, while not discussed explicitly in this post, there is usually a need for a data engine to ingest, process and manage data.
+3. **Evaluate the results** – We take the inputs of our evaluation set and pass them through the artifacts of our experiment to obtain outputs. Then, we feed these outputs paired with the desired outputs to our evaluators to obtain the **offline metrics**.
+4. **Decide** – If the results indicate improvement over the previous iteration, integrate the experiment's work into the solution. If not, document the lessons learned and archive the work. At this point, we may choose to exit the inner loop and deploy the current solution to the real world or return to step 1 to formulate a new hypothesis and continue refining the system.
+
+:::{.callout-note}
+A good analogy for this way of working is to consider it the Test-Driven Development for Machine Learning. The Problem Definition defines the test we need to pass, and the Inner Loop are our efforts to accomplish that.
+:::
+
+In that same direction, investing in infrastructure to enable fast iteration and fast feedback loops is usually a good idea.  The more ideas we can try per unit of time, the highest the chances we find the right one.
+
+### The Baseline
+
+When we enter the loop for the first time, we have nothing to iterate upon. Thus, we define **our first hypothesis: the baseline**. The goal of a baseline is not to solve the problem, but to allow us to start the iterative improvement. Thus, we prioritize simplicity and speed of implementation. Sensible baselines for our examples could be:
+
+-	If average pixel intensity deviates more than 10% of average pixel intensity for non-scratched screens, label the picture as scratched.
+-	Given a user question, retrieve the paragraphs that contain all the words in the user question (after removing the stop words).
+
+## The Outer Loop
+
+Once our solution meets the success criteria we defined in the beginning, we may enter the Outer Loop for the first time. This process does interact with the outside world (e.g., users), hence the outer. It consists of the following steps:
+
+1. **Deploy** – With what we believe is a functional solution, it's time to introduce it to the real world so it becomes a **product**. Note that deploying or not is usually a business decision. Besides performance, other factors may come into play.
+2. **Observe and monitor** – Deployment marks the real test. We must ensure mechanisms are in place to track real-world interactions. This includes logging inputs, outputs, and user interactions. Sufficient data should be collected to accurately reconstruct system behavior, often referred to as **traces**.
+3. **Digest** – Always process what happens to the deployed system. This may involve manual inspection of data or labeling subsets for **online metrics**. Confidence in performance alignment with offline metrics is crucial.
+4. **Decide** – If real-world performance meets success criteria, you have two options:
+  -	Enter maintenance mode: Take no further action unless performance degrades.
+  - Revisit your problem definition to be more ambitious in your success criteria or in the desired scope.
+
+  If performance falls short, it indicates flaws in the problem definition. This may involve updating the evaluation dataset, revisiting evaluators, or redefining success criteria. After updating the problem definition, re-enter the Inner Loop.
+
+:::{.callout-caution}
+Deploying directly to production can be risky, as a faulty product could damage reputation or incur losses. However, the first deployment often yields valuable insights. Strategies to mitigate risks and gather learnings without significant impact are recommended. These strategies also signal readiness for full deployment, such as:
+
+- Shadow mode deployment: Run the model alongside existing systems without using its predictions, allowing for comparison.
+- Alpha version rollout: Deploy to a subset of users aware they're using a trial version, encouraging feedback.
+:::
+
+## The Diagram
+
+![The diagram of Hypothesis Driven Development for AI products, including the Inner and the Outer loops.](hdd_ai_diagram.svg)
+
+## Recommended Practices
+
+While there are many ways to skin the proverbial cat, in my experience there are a few (interrelated) practices that maximize the chances of success:
+
+- **Iterate small and iterate frequently** - These endeavors are plagued with uncertainty. Each step teaches us something. If we walk in small steps, we will rarely walk in the wrong direction for long.
+- **Strive for full traceability** – Hypotheses and experiments often number in the tens or even hundreds. Establishing infrastructure to track the origin of each result—both code and data—proves invaluable. If you cannot effectively reason about every result, you will get confused quickly. Tools like mlflow help on this front.
+- **Write experiment documents** – Similar to lab notebooks in science, keeping track of what was tried, why, what was expected and what ultimately happened is extremely valuable. Formalizing our thoughts in writing helps reflect on them and ground ourselves. Moreover, this practice streamlines sharing insights among team members and for future reference.
+- **Build a leaderboard** – Every project has stakeholders. At the very least, the developers are their first stakeholders. A centralized place where each experiment is displayed with its metrics helps demonstrate progress over time and can help boost morale and secure funding.
+
+## Closing Thoughts
+
+While things are presented here somewhat linearly, the reality is often messier. It is hard to get the problem definition right on the first try. As you work on the problem, you discover things you did not anticipate. You are forced to revisit your assumptions and reformulate your goals. You may have to scrap big. You may decide to take a calculated risk and deviate from the standard path. Maybe relax success criteria to explore early product interest. All that is okay. That is just business as usual in the realm of AI. If you make some progress every day, there is a solid chance you will reach a valuable destination, even if not the one expected initially. Embrace uncertainty and enjoy the journey.
+
+::: {.acknowledgements}
+Thanks to [Chris Hughes](https://medium.com/@chris.p.hughes10), Patrick Schuler and [Marc Gomez](https://www.linkedin.com/in/marcgomez/) for reviewing this article.
+:::
+
