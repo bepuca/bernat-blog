@@ -22,6 +22,7 @@ also referred as **Continuous Experimentation**.
 The aim of this post is to offer guidance on how to implement this approach: a conceptual compass to help navigate the uncertainty while increasing the chances of success. In other words, it's about maximizing the possibility of creating machine learning-powered products that have an impact in the real world.
 
 To illustrate the process discussed here, we will consider two examples. One from the world of computer vision and the other from the world of Large Language Models:
+
 - Detect defects in a production line.
 - Answer user questions related to a company’s internal documents.
 

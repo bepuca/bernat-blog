@@ -5,12 +5,6 @@ div.quarto-post {
     border-bottom: none;
 }
 
-/* Aligns metadata and title vertically instead of horizontally */
-/* div.quarto-post.image-right {
-    flex-direction: column-reverse;
-    gap: 0px;
-} */
-
 #about-header {
     text-align: center;
     align-items: center;
@@ -61,6 +55,5 @@ div.thumbnail p {
 
 .acknowledgements {
     font-size: small;
-    text-align: center;
     font-style: italic;
 }
