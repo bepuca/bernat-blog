@@ -424,6 +424,10 @@ $ python eval_capital.py dataset.json .github/evals/capital/20250625-0840.json
 Accuracy: 100.00% (3/3)
 ```
 
+## Seeing it in Action
+
+![Demo of the evaluation harness](https://github.com/bepuca/copilot-chat-eval/blob/main/demo.gif?raw=true)
+
 **The evaluation harness works!** We can now systematically test our prompts and track performance over time.
 
 While our example uses simple string matching, you can make evaluation as sophisticated as needed - LLM-as-judge for complex outputs or multi-dimensional scoring, for instance. The key is starting simple and iterating.
