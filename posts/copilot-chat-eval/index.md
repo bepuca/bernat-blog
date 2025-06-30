@@ -1,7 +1,7 @@
 ---
 title: "Building an Evaluation Harness for VSCode Copilot Chat"
-subtitle: Because your prompts deserve better
-date: "2025-06-27"
+subtitle: Because your prompts deserve better than vibe-checks
+date: "2025-06-30"
 image: chat_eval_thumbnail.png
 ---
 
@@ -11,9 +11,9 @@ image: chat_eval_thumbnail.png
 
 You built a **VSCode Copilot Chat prompt** that extracts key information from server error logs. You paste a log entry, it returns structured data: error type, severity, and affected component. It works great for some logs, but fails on others. You tweak the prompt to fix the failing cases - now the ones that worked are broken. **Without systematic testing, you're playing whack-a-mole**: every fix introduces new problems, and you can't tell if you're making progress or just moving issues around. Sound familiar?
 
-While [VSCode Copilot Chat](https://code.visualstudio.com/docs/copilot/overview) is marketed for code interaction, it turns out that with [Agent mode](https://code.visualstudio.com/docs/copilot/chat/chat-agent-mode), [custom tools](https://code.visualstudio.com/docs/copilot/chat/chat-agent-mode#_agent-mode-tools), and [reusable prompts](https://code.visualstudio.com/docs/copilot/copilot-customization), **you can build agentic workflows with almost no code**. The batteries are included - file operations, web access, and [MCP](https://modelcontextprotocol.io/introduction) tools - making it perfect for rapid prototyping of AI workflows that may or may not interact with your codebase. But here's the catch: while you can test your custom MCP servers and tools, **there's no way to evaluate the prompts that orchestrate them**. You're stuck with "it seems to work fine" - and we all know [evals are essential](https://hamel.dev/blog/posts/evals/) for [systematically improving AI solutions](https://www.bepuca.dev/posts/hdd-for-ai/).
+While [VSCode Copilot Chat](https://code.visualstudio.com/docs/copilot/overview) is marketed for code interaction, it turns out that with [Agent mode](https://code.visualstudio.com/docs/copilot/chat/chat-agent-mode), [custom tools](https://code.visualstudio.com/docs/copilot/chat/chat-agent-mode#_agent-mode-tools), and [reusable prompts](https://code.visualstudio.com/docs/copilot/copilot-customization), **you can build agentic workflows with almost no code**. The batteries are included - file operations, web access, and [MCP](https://modelcontextprotocol.io/introduction) tools - making it well-suited for rapid prototyping of AI workflows that may or may not interact with your codebase. But there's a catch: while you can test your custom MCP servers and tools, **there's no way to evaluate the prompts that orchestrate them**. You're stuck with "it seems to work fine" - yet [evals are essential](https://hamel.dev/blog/posts/evals/) for [systematically improving AI solutions](https://www.bepuca.dev/posts/hdd-for-ai/).
 
-This is a real problem. Without evaluation, you can't measure performance, catch regressions, or improve reliably. You are left between vibe checks and building a fully fledged custom solution that could take weeks - effort that could be completely wasted if the workflow turns out to be less useful than expected. In this post, **we'll build a scrappy evaluation harness for VSCode Copilot Chat prompts** that hopefully gets us 80% of the value with 20% of the effort. The code is available at [github.com/bepuca/copilot-chat-eval](https://github.com/bepuca/copilot-chat-eval).
+This is a real problem. Without evaluation, you can't measure performance, catch regressions, or improve reliably. You are left between vibe checks and building a fully-fledged custom solution that could take weeks - effort that could be completely wasted if the workflow turns out to be less useful than expected. In this post, **we'll build a scrappy evaluation harness for VSCode Copilot Chat prompts** that hopefully gets us 80% of the value with 20% of the effort. The code is available at [github.com/bepuca/copilot-chat-eval](https://github.com/bepuca/copilot-chat-eval).
 
 ## The Problem
 
@@ -40,7 +40,7 @@ If we can do this, we can finally measure our prompts' performance.
 
 ## Exploring Our Options
 
-Since VSCode doesn't expose chat functionality through an API, we need to get creative. The only way to programmatically interact with VSCode is by [building an extension](https://code.visualstudio.com/api/get-started/your-first-extension). After digging through the documentation, I found three potential approaches:
+Since VSCode doesn't expose chat functionality through an API, we need to get creative. The primary way to programmatically interact with VSCode is by [building an extension](https://code.visualstudio.com/api/get-started/your-first-extension). After digging through the documentation, I found three potential approaches:
 
 1. **Build a [Chat Extension](https://code.visualstudio.com/api/extension-guides/chat)**: Create a chat participant that users invoke with `@participant`. This won't work because:
    - It changes the user's workflow (they'd have to type `@eval /myprompt` instead of just `/myprompt`).
@@ -50,16 +50,16 @@ Since VSCode doesn't expose chat functionality through an API, we need to get cr
    - No custom system prompts allowed (might not match chat's behavior).
    - Unclear if Agent mode and tools work through this API.
    - If we can't replicate chat features, we're not really testing the same thing.
-3. **Automate VSCode commands**: Use the same commands that keybindings trigger to programmatically control the chat. Hacky, but:
+3. **Automate VSCode commands**: Use the same commands that keybindings trigger to programmatically control the chat. A bit of a workaround, but:
    - Could reproduce exact user interactions.
    - Relies on somewhat undocumented behavior that might break.
    - No guarantees it'll work or keep working.
 
-**None of these options are ideal.** Each has significant limitations that make evaluation difficult.
+**Each of these options has significant drawbacks** that make evaluation difficult.
 
-With [VSCode Chat Copilot going open source](https://code.visualstudio.com/blogs/2025/05/19/openSourceAIEditor), the community might eventually build proper evaluation tools. But that could take months, and as we know, [something done today is better than something perfect in the future](https://lucumr.pocoo.org/2025/2/20/ugly-code/).
+With [VSCode Chat Copilot going open source](https://code.visualstudio.com/blogs/2025/05/19/openSourceAIEditor), the community might eventually build proper evaluation tools. But that could take months - and often [something shipped today is better than perfection later](https://lucumr.pocoo.org/2025/2/20/ugly-code/).
 
-So let's be pragmatic and see what we can actually make work.
+Let’s take a practical approach and focus on what’s realistically achievable.
 
 ## Testing the Language Model API
 
@@ -323,7 +323,7 @@ Key differences:
 - **Context injection**: Chat auto-adds environment info, API gives you full control
 - **Temperature**: Chat uses 0, API defaults to 0.1
 
-**Bottom line:** The Language Model API evaluates a different system than what users experience in chat. Our only hope now is option 3 - automating VSCode commands to control the actual chat interface.
+**Bottom line:** The Language Model API evaluates a different system than what users experience in chat. Our best remaining option now is option 3 - automating VSCode commands to control the actual chat interface.
 
 ## Hacking VSCode Commands
 
@@ -435,7 +435,7 @@ While our example uses simple string matching, you can make evaluation as sophis
 
 ## Conclusion
 
-**Yes, we can evaluate VSCode Copilot Chat workflows** - with significant limitations. Our hacky approach has **rough edges**:
+**Yes, we can evaluate VSCode Copilot Chat workflows** - with significant limitations. Our approach has **rough edges**:
 
 - **Sequential execution** - Evaluations run one record at a time, no parallelization
 - **Fixed wait times** - We must guess how long each prompt takes since there's no way to query completion status, leading to either wasted time or incomplete responses
