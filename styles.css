@@ -1,8 +1,9 @@
 /* css styles */
 
-/* Removes the line between posts */
 div.quarto-post {
-    border-bottom: none;
+    border-bottom: none; /* Removes the line between posts */
+    gap: 0; /* Removes gap between date and title */
+    margin-left: 1rem; /* Aligns left edge to look nicer */
 }
 
 #about-header {
@@ -24,33 +25,13 @@ div.quarto-post .metadata {
     flex-basis: 20%;
 }
 
-div.quarto-post .body {
-    flex-basis: 60%;
-}
-
-div.quarto-post .thumbnail {
-    flex-basis: 20%;
-}
-div.quarto-post .thumbnail img {
-    border-radius: 50%;
-    max-height: 150px;
-    max-width: 150px;
-    margin-top: 0;
-}
-
-div.thumbnail p {
-    margin-bottom: 0;
-    text-align: center;
-}
-
 .post-thumbnail {
     text-align: center;
-    aspect-ratio: 16/9
 }
 
 .post-thumbnail img {
-    border-radius: 50%;
-    max-width: 50%;
+    border-radius: 50px; /* Adds soft, rounded corners */
+    object-fit: cover; /* Ensures the image scales properly */
 }
 
 .acknowledgements {

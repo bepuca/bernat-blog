@@ -1,0 +1,1357 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.32">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="dcterms.date" content="2025-06-30">
+
+<title>Building an Evaluation Harness for VSCode Copilot Chat – Bernat Puig Camps</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../../profile.jpg" rel="icon" type="image/jpeg">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-90c2643ab6f776117e85fdd60cb25922.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-e170f91ef3a08c24ebee02e6bb09b870.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-90c2643ab6f776117e85fdd60cb25922.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-36834dda584e32998bd1355f6bbda61a.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-f5f359a2a95642cc90e0c59f354fbe86.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-36834dda584e32998bd1355f6bbda61a.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../profile.jpg" alt="" class="navbar-logo">
+    </a>
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Bernat Puig Camps</span>
+    </a>
+  </div>
+        <div class="quarto-navbar-tools tools-end">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+          <div id="quarto-search" class="" title="Search"></div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#the-problem" id="toc-the-problem" class="nav-link active" data-scroll-target="#the-problem">The Problem</a></li>
+  <li><a href="#exploring-our-options" id="toc-exploring-our-options" class="nav-link" data-scroll-target="#exploring-our-options">Exploring Our Options</a></li>
+  <li><a href="#testing-the-language-model-api" id="toc-testing-the-language-model-api" class="nav-link" data-scroll-target="#testing-the-language-model-api">Testing the Language Model API</a>
+  <ul class="collapse">
+  <li><a href="#setting-up-mitmproxy" id="toc-setting-up-mitmproxy" class="nav-link" data-scroll-target="#setting-up-mitmproxy">Setting Up mitmproxy</a></li>
+  <li><a href="#what-chat-sends" id="toc-what-chat-sends" class="nav-link" data-scroll-target="#what-chat-sends">What Chat Sends</a></li>
+  <li><a href="#what-the-language-model-api-sends" id="toc-what-the-language-model-api-sends" class="nav-link" data-scroll-target="#what-the-language-model-api-sends">What the Language Model API sends</a></li>
+  </ul></li>
+  <li><a href="#hacking-vscode-commands" id="toc-hacking-vscode-commands" class="nav-link" data-scroll-target="#hacking-vscode-commands">Hacking VSCode Commands</a>
+  <ul class="collapse">
+  <li><a href="#building-the-evaluation-loop" id="toc-building-the-evaluation-loop" class="nav-link" data-scroll-target="#building-the-evaluation-loop">Building the Evaluation Loop</a></li>
+  </ul></li>
+  <li><a href="#example-country-capitals" id="toc-example-country-capitals" class="nav-link" data-scroll-target="#example-country-capitals">Example: Country Capitals</a></li>
+  <li><a href="#seeing-it-in-action" id="toc-seeing-it-in-action" class="nav-link" data-scroll-target="#seeing-it-in-action">Seeing it in Action</a></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a>
+  <ul class="collapse">
+  <li><a href="#further-work" id="toc-further-work" class="nav-link" data-scroll-target="#further-work">Further work</a></li>
+  </ul></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Building an Evaluation Harness for VSCode Copilot Chat</h1>
+<p class="subtitle lead">Because your prompts deserve better than vibe-checks</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">June 30, 2025</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<div class="post-thumbnail">
+<p><img src="chat_eval_thumbnail.png" class="img-fluid"></p>
+</div>
+<p>You built a <strong>VSCode Copilot Chat prompt</strong> that extracts key information from server error logs. You paste a log entry, it returns structured data: error type, severity, and affected component. It works great for some logs, but fails on others. You tweak the prompt to fix the failing cases - now the ones that worked are broken. <strong>Without systematic testing, you’re playing whack-a-mole</strong>: every fix introduces new problems, and you can’t tell if you’re making progress or just moving issues around. Sound familiar?</p>
+<p>While <a href="https://code.visualstudio.com/docs/copilot/overview">VSCode Copilot Chat</a> is marketed for code interaction, it turns out that with <a href="https://code.visualstudio.com/docs/copilot/chat/chat-agent-mode">Agent mode</a>, <a href="https://code.visualstudio.com/docs/copilot/chat/chat-agent-mode#_agent-mode-tools">custom tools</a>, and <a href="https://code.visualstudio.com/docs/copilot/copilot-customization">reusable prompts</a>, <strong>you can build agentic workflows with almost no code</strong>. The batteries are included - file operations, web access, and <a href="https://modelcontextprotocol.io/introduction">MCP</a> tools - making it well-suited for rapid prototyping of AI workflows that may or may not interact with your codebase. But there’s a catch: while you can test your custom MCP servers and tools, <strong>there’s no way to evaluate the prompts that orchestrate them</strong>. You’re stuck with “it seems to work fine” - yet <a href="https://hamel.dev/blog/posts/evals/">evals are essential</a> for <a href="https://www.bepuca.dev/posts/hdd-for-ai/">systematically improving AI solutions</a>.</p>
+<p>This is a real problem. Without evaluation, you can’t measure performance, catch regressions, or improve reliably. You are left between vibe checks and building a fully-fledged custom solution that could take weeks - effort that could be completely wasted if the workflow turns out to be less useful than expected. In this post, <strong>we’ll build a scrappy evaluation harness for VSCode Copilot Chat prompts</strong> that hopefully gets us 80% of the value with 20% of the effort. The code is available at <a href="https://github.com/bepuca/copilot-chat-eval">github.com/bepuca/copilot-chat-eval</a>.</p>
+<section id="the-problem" class="level2">
+<h2 class="anchored" data-anchor-id="the-problem">The Problem</h2>
+<p>To build an evaluation harness for <a href="https://code.visualstudio.com/api/extension-guides/language-model">VSCode Copilot Chat prompts</a>, we need to solve a specific challenge: <strong>how do we programmatically run the same prompt with different inputs and capture the results?</strong></p>
+<p>Let’s be concrete. Say you have a prompt that parses server logs. You want to:</p>
+<ol type="1">
+<li>Feed it 20 different log entries from your test dataset</li>
+<li>Capture each extraction response</li>
+<li>Check if those extraction are correct</li>
+<li>Track performance over time</li>
+</ol>
+<p>But VSCode Chat is designed for interactive use, not automation. There’s no obvious API to send a message and get a response programmatically. And here’s the crucial constraint: LLMs are sensitive to context, so our <strong>evaluation must mimic manual use exactly</strong>. If we test with a different context or invocation method, we’re not actually testing what users experience - and we don’t know what context differences might exist.</p>
+<p>For simplicity, <strong>we’ll focus on single-turn interactions</strong>: one prompt, one response. Multi-turn conversations add complexity we could tackle later.</p>
+<p>Our requirements are straightforward: - Define a reusable prompt that accepts parameters - Create a dataset of test inputs - Run each input through Copilot Chat automatically. - Capture and save the responses for analysis</p>
+<p>If we can do this, we can finally measure our prompts’ performance.</p>
+</section>
+<section id="exploring-our-options" class="level2">
+<h2 class="anchored" data-anchor-id="exploring-our-options">Exploring Our Options</h2>
+<p>Since VSCode doesn’t expose chat functionality through an API, we need to get creative. The primary way to programmatically interact with VSCode is by <a href="https://code.visualstudio.com/api/get-started/your-first-extension">building an extension</a>. After digging through the documentation, I found three potential approaches:</p>
+<ol type="1">
+<li><strong>Build a <a href="https://code.visualstudio.com/api/extension-guides/chat">Chat Extension</a></strong>: Create a chat participant that users invoke with <code>@participant</code>. This won’t work because:
+<ul>
+<li>It changes the user’s workflow (they’d have to type <code>@eval /myprompt</code> instead of just <code>/myprompt</code>).</li>
+<li>Not supported in Agent mode (at least for now)</li>
+<li>Different invocation = different LLM context = invalid evaluation. Off the table, then.</li>
+</ul></li>
+<li><strong>Use the <a href="https://code.visualstudio.com/api/extension-guides/language-model">Language Model API</a></strong>: Call Copilot’s models directly from our extension. Promising, but:
+<ul>
+<li>No custom system prompts allowed (might not match chat’s behavior).</li>
+<li>Unclear if Agent mode and tools work through this API.</li>
+<li>If we can’t replicate chat features, we’re not really testing the same thing.</li>
+</ul></li>
+<li><strong>Automate VSCode commands</strong>: Use the same commands that keybindings trigger to programmatically control the chat. A bit of a workaround, but:
+<ul>
+<li>Could reproduce exact user interactions.</li>
+<li>Relies on somewhat undocumented behavior that might break.</li>
+<li>No guarantees it’ll work or keep working.</li>
+</ul></li>
+</ol>
+<p><strong>Each of these options has significant drawbacks</strong> that make evaluation difficult.</p>
+<p>With <a href="https://code.visualstudio.com/blogs/2025/05/19/openSourceAIEditor">VSCode Chat Copilot going open source</a>, the community might eventually build proper evaluation tools. But that could take months - and often <a href="https://lucumr.pocoo.org/2025/2/20/ugly-code/">something shipped today is better than perfection later</a>.</p>
+<p>Let’s take a practical approach and focus on what’s realistically achievable.</p>
+</section>
+<section id="testing-the-language-model-api" class="level2">
+<h2 class="anchored" data-anchor-id="testing-the-language-model-api">Testing the Language Model API</h2>
+<p>Option 2 (Language Model API) seems most promising - if it works, we get clean programmatic access. But there’s a critical question: does it use the same system prompt as the chat interface? If not, we’re evaluating something different from what users experience.</p>
+<p>To find out, <strong>we need to see what prompts VSCode actually sends</strong>. Following a similar approach as <a href="https://hamel.dev/blog/posts/prompt/#setting-up-mitmproxy">Hamel’s</a>, we’ll use <a href="https://mitmproxy.org/">mitmproxy</a> to intercept VSCode’s API calls and examine the system prompts.</p>
+<section id="setting-up-mitmproxy" class="level3">
+<h3 class="anchored" data-anchor-id="setting-up-mitmproxy">Setting Up mitmproxy</h3>
+<p>To set up mitmproxy to intercept VSCode’s API calls:</p>
+<ol type="1">
+<li>Install: <code>uv tool install mitmproxy</code> or follow <a href="https://docs.mitmproxy.org/stable/overview/installation/">official instructions</a></li>
+<li>Start the browser-based UI: <code>mitmweb</code></li>
+<li>Configure VSCode to use the proxy: Add <code>"http.proxy": "http://127.0.0.1:8080"</code> to <code>settings.json</code>. Or set up the “Http: Proxy” setting in the UI.</li>
+<li>Trust the certificate so requests succeed: Follow <a href="https://docs.mitmproxy.org/stable/concepts/certificates/">mitmproxy’s instructions</a> for your OS.</li>
+</ol>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<code>mitmproxy</code> security note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li><code>mitmproxy</code> creates a local user-specific CA certificate on first use. Keep that private key secure, since anyone who obtains it could decrypt your traffic.</li>
+<li>These instructions run the proxy on localhost, all intercepted data stays on your machine, but be sure to configure only VS Code (not your entire system) to use the proxy so other applications aren’t inadvertently routed through it.</li>
+<li>Once you’re finished inspecting calls, remember to remove or disable the proxy and untrust the certificate, especially if you’re handling sensitive code or secrets in the editor.</li>
+</ul>
+</div>
+</div>
+</section>
+<section id="what-chat-sends" class="level3">
+<h3 class="anchored" data-anchor-id="what-chat-sends">What Chat Sends</h3>
+<p>With mitmproxy running, we can trigger a chat message and searched for calls to <code>https://api.enterprise.githubcopilot.com/chat/completions</code>. Here’s the request structure:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode json code-with-copy"><code class="sourceCode json"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">"messages"</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>        <span class="fu">{</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>            <span class="dt">"role"</span><span class="fu">:</span> <span class="st">"system"</span><span class="fu">,</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>            <span class="dt">"content"</span><span class="fu">:</span> <span class="st">"You are an AI programming assistant.</span><span class="ch">\n</span><span class="st">When..."</span><span class="fu">,</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>            <span class="dt">"copilot_cache_control"</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>                <span class="dt">"type"</span><span class="fu">:</span> <span class="st">"ephemeral"</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>            <span class="fu">}</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>        <span class="fu">}</span><span class="ot">,</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>        <span class="fu">{</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>            <span class="dt">"role"</span><span class="fu">:</span> <span class="st">"user"</span><span class="fu">,</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>            <span class="dt">"content"</span><span class="fu">:</span> <span class="st">"&lt;environment_info&gt;</span><span class="ch">\n</span><span class="st">The user's ..."</span><span class="fu">,</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>            <span class="dt">"copilot_cache_control"</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>                <span class="dt">"type"</span><span class="fu">:</span> <span class="st">"ephemeral"</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>            <span class="fu">}</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>        <span class="fu">}</span><span class="ot">,</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>        <span class="fu">{</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>            <span class="dt">"role"</span><span class="fu">:</span> <span class="st">"user"</span><span class="fu">,</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>            <span class="dt">"content"</span><span class="fu">:</span> <span class="st">"&lt;context&gt;</span><span class="ch">\n</span><span class="st">The current date is..."</span><span class="fu">,</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>            <span class="dt">"copilot_cache_control"</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>                <span class="dt">"type"</span><span class="fu">:</span> <span class="st">"ephemeral"</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>            <span class="fu">}</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>        <span class="fu">}</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>    <span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>    <span class="dt">"model"</span><span class="fu">:</span> <span class="st">"claude-sonnet-4"</span><span class="fu">,</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>    <span class="dt">"temperature"</span><span class="fu">:</span> <span class="dv">0</span><span class="fu">,</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>    <span class="dt">"top_p"</span><span class="fu">:</span> <span class="dv">1</span><span class="fu">,</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>    <span class="dt">"max_tokens"</span><span class="fu">:</span> <span class="dv">16000</span><span class="fu">,</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>    <span class="dt">"tools"</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>        <span class="er">//</span> <span class="er">many</span> <span class="er">and</span> <span class="er">irrelevant</span> <span class="er">at</span> <span class="er">this</span> <span class="er">point</span></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>    <span class="ot">]</span></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The raw JSON has escaped characters, but when formatted for readability, the key parts are below. Note that the details of the Chat system prompt are not critical, we just need to see if it matches the Language Model API’s.</p>
+<div class="callout callout-style-default callout-note no-icon callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Chat System Prompt
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-2" class="callout-2-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<pre class="text"><code>You are an AI programming assistant.
+When asked for your name, you must respond with "GitHub Copilot".
+Follow the user's requirements carefully &amp; to the letter.
+Follow Microsoft content policies.
+Avoid content that violates copyrights.
+If you are asked to generate content that is harmful, hateful, racist, sexist, lewd, or violent, only respond with "Sorry, I can't assist with that."
+Keep your answers short and impersonal.
+&lt;instructions&gt;
+You are a highly sophisticated automated coding agent with expert-level knowledge across many different programming languages and frameworks.
+The user will ask a question, or ask you to perform a task, and it may require lots of research to answer correctly. There is a selection of tools that let you perform actions or retrieve helpful context to answer the user's question.
+You will be given some context and attachments along with the user prompt. You can use them if they are relevant to the task, and ignore them if not. Some attachments may be summarized. You can use the read_file tool to read more context, if needed.
+If you can infer the project type (languages, frameworks, and libraries) from the user's query or the context that you have, make sure to keep them in mind when making changes.
+If the user wants you to implement a feature and they have not specified the files to edit, first break down the user's request into smaller concepts and think about the kinds of files you need to grasp each concept.
+If you aren't sure which tool is relevant, you can call multiple tools. You can call tools repeatedly to take actions or gather as much context as needed until you have completed the task fully. Don't give up unless you are sure the request cannot be fulfilled with the tools you have. It's YOUR RESPONSIBILITY to make sure that you have done all you can to collect necessary context.
+When reading files, prefer reading large meaningful chunks rather than consecutive small sections to minimize tool calls and gain better context.
+Don't make assumptions about the situation- gather context first, then perform the task or answer the question.
+Think creatively and explore the workspace in order to make a complete fix.
+Don't repeat yourself after a tool call, pick up where you left off.
+NEVER print out a codeblock with file changes unless the user asked for it. Use the appropriate edit tool instead.
+NEVER print out a codeblock with a terminal command to run unless the user asked for it. Use the run_in_terminal tool instead.
+You don't need to read a file if it's already provided in context.
+&lt;/instructions&gt;
+&lt;toolUseInstructions&gt;
+If the user is requesting a code sample, you can answer it directly without using any tools.
+When using a tool, follow the JSON schema very carefully and make sure to include ALL required properties.
+Always output valid JSON when using a tool.
+If a tool exists to do a task, use the tool instead of asking the user to manually take an action.
+If you say that you will take an action, then go ahead and use the tool to do it. No need to ask permission.
+Never use multi_tool_use.parallel or any tool that does not exist. Use tools using the proper procedure, DO NOT write out a JSON codeblock with the tool inputs.
+NEVER say the name of a tool to a user. For example, instead of saying that you'll use the run_in_terminal tool, say "I'll run the command in a terminal".
+If you think running multiple tools can answer the user's question, prefer calling them in parallel whenever possible, but do not call semantic_search in parallel.
+When using the read_file tool, prefer reading a large section over calling the read_file tool many times in sequence. You can also think of all the pieces you may be interested in and read them in parallel. Read large enough context to ensure you get what you need.
+If semantic_search returns the full contents of the text files in the workspace, you have all the workspace context.
+You can use the grep_search to get an overview of a file by searching for a string within that one file, instead of using read_file many times.
+If you don't know exactly the string or filename pattern you're looking for, use semantic_search to do a semantic search across the workspace.
+Don't call the run_in_terminal tool multiple times in parallel. Instead, run one command and wait for the output before running the next command.
+When invoking a tool that takes a file path, always use the absolute file path. If the file has a scheme like untitled: or vscode-userdata:, then use a URI with the scheme.
+NEVER try to edit a file by running terminal commands unless the user specifically asks for it.
+Tools can be disabled by the user. You may see tools used previously in the conversation that are not currently available. Be careful to only use the tools that are currently available to you.
+&lt;/toolUseInstructions&gt;
+&lt;editFileInstructions&gt;
+Don't try to edit an existing file without reading it first, so you can make changes properly.
+Use the insert_edit_into_file tool to edit files. When editing files, group your changes by file.
+NEVER show the changes to the user, just call the tool, and the edits will be applied and shown to the user.
+NEVER print a codeblock that represents a change to a file, use insert_edit_into_file instead.
+For each file, give a short description of what needs to be changed, then use the insert_edit_into_file tool. You can use any tool multiple times in a response, and you can keep writing text after using a tool.
+Follow best practices when editing files. If a popular external library exists to solve a problem, use it and properly install the package e.g. creating a "requirements.txt".
+If you're building a webapp from scratch, give it a beautiful and modern UI.
+After editing a file, any new errors in the file will be in the tool result. Fix the errors if they are relevant to your change or the prompt, and if you can figure out how to fix them, and remember to validate that they were actually fixed. Do not loop more than 3 times attempting to fix errors in the same file. If the third try fails, you should stop and ask the user what to do next.
+The insert_edit_into_file tool is very smart and can understand how to apply your edits to the user's files, you just need to provide minimal hints.
+When you use the insert_edit_into_file tool, avoid repeating existing code, instead use comments to represent regions of unchanged code. The tool prefers that you are as concise as possible. For example:
+// ...existing code...
+changed code
+// ...existing code...
+changed code
+// ...existing code...
+
+Here is an example of how you should format an edit to an existing Person class:
+class Person {
+        // ...existing code...
+        age: number;
+        // ...existing code...
+        getAge() {
+                return this.age;
+        }
+}
+&lt;/editFileInstructions&gt;
+&lt;notebookInstructions&gt;
+To edit notebook files in the workspace, you can use the edit_notebook_file tool.Use the run_notebook_cell tool instead of executing Jupyter related commands in the Terminal, such as `jupyter notebook`, `jupyter lab`, `install jupyter` or the like.
+Use the copilot_getNotebookSummary tool to get the summary of the notebook (this includes the list or all cells along with the Cell Id, Cell type and Cell Language, execution details and mime types of the outputs, if any).
+&lt;/notebookInstructions&gt;
+&lt;outputFormatting&gt;
+Use proper Markdown formatting in your answers. When referring to a filename or symbol in the user's workspace, wrap it in backticks.
+&lt;example&gt;
+The class `Person` is in `src/models/person.ts`.
+&lt;/example&gt;
+
+&lt;/outputFormatting&gt;</code></pre>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip no-icon callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+First User Message
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-3" class="callout-3-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<pre class="text"><code>&lt;environment_info&gt;
+The user's current OS is: macOS
+The user's default shell is: "zsh". When you generate terminal commands, please generate them correctly for this shell.
+&lt;/environment_info&gt;
+&lt;workspace_info&gt;
+The following tasks can be executed using the run_vs_code_task tool:
+&lt;workspaceFolder path="path/to/workspace"&gt;
+&lt;task id="shell: echo"&gt;
+{
+        "label": "echo",
+        "type": "shell",
+        "command": "echo Hello"
+}
+&lt;/task&gt;
+
+&lt;/workspaceFolder&gt;
+I am working in a workspace with the following folders:
+- path/to/workspace
+I am working in a workspace that has the following structure:
+
+'''
+- file1
+- file2
+'''
+
+This is the state of the context at this point in the conversation. The view of the workspace structure may be truncated. You can use tools to collect more context if needed.
+&lt;/workspace_info&gt;</code></pre>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip no-icon callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-4-contents" aria-controls="callout-4" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Second User Message
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-4" class="callout-4-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<pre class="text"><code>&lt;context&gt;
+The current date is 24 June 2025.
+&lt;/context&gt;
+&lt;reminder&gt;
+When using the insert_edit_into_file tool, avoid repeating existing code, instead use a line comment with \`...existing code...\` to represent regions of unchanged code.
+When using the replace_string_in_file tool, include 3-5 lines of unchanged code before and after the string you want to replace, to make it unambiguous which part of the file should be edited.
+&lt;/reminder&gt;
+&lt;userRequest&gt;
+What is the meaning of life?
+&lt;/userRequest&gt;</code></pre>
+</div>
+</div>
+</div>
+<p>Key insights for evaluation:</p>
+<ul>
+<li><strong>Temperature is 0</strong> - good for reproducibility</li>
+<li><strong>Environment info is injected</strong> - OS details make context vary between users</li>
+<li><strong>Date is injected</strong> - same prompt on different days = different context</li>
+</ul>
+<p>Perfect reproducibility is impossible since VSCode injects dynamic context. But that’s OK - we’re building a practical tool, not a perfect one. <strong>Some signal beats no signal</strong>.</p>
+</section>
+<section id="what-the-language-model-api-sends" class="level3">
+<h3 class="anchored" data-anchor-id="what-the-language-model-api-sends">What the Language Model API sends</h3>
+<p>To see if the Language Model API uses the same system prompt as chat, I built a minimal VSCode extension that calls the API directly. The key part:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode typescript code-with-copy"><code class="sourceCode typescript"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> [model] <span class="op">=</span> <span class="cf">await</span> vscode<span class="op">.</span><span class="at">lm</span><span class="op">.</span><span class="fu">selectChatModels</span>({</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    vendor<span class="op">:</span> <span class="st">'copilot'</span><span class="op">,</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    family<span class="op">:</span> <span class="st">'claude-sonnet-4'</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> messages <span class="op">=</span> [</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    vscode<span class="op">.</span><span class="at">LanguageModelChatMessage</span><span class="op">.</span><span class="fu">User</span>(<span class="st">'What is the meaning of life?'</span>)</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>]<span class="op">;</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> request <span class="op">=</span> model<span class="op">.</span><span class="fu">sendRequest</span>(messages<span class="op">,</span> {}<span class="op">,</span> token)<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>When I ran this extension and checked mitmproxy, here’s what the Language Model API sends:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode json code-with-copy"><code class="sourceCode json"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">"messages"</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>        <span class="fu">{</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>            <span class="dt">"role"</span><span class="fu">:</span> <span class="st">"system"</span><span class="fu">,</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>            <span class="dt">"content"</span><span class="fu">:</span> <span class="st">"Follow Microsoft content policies..."</span><span class="fu">,</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>        <span class="fu">}</span><span class="ot">,</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>        <span class="fu">{</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>            <span class="dt">"role"</span><span class="fu">:</span> <span class="st">"user"</span><span class="fu">,</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>            <span class="dt">"content"</span><span class="fu">:</span> <span class="st">"What is the meaning of life?"</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>        <span class="fu">}</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    <span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    <span class="dt">"model"</span><span class="fu">:</span> <span class="st">"claude-sonnet-4"</span><span class="fu">,</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>    <span class="dt">"temperature"</span><span class="fu">:</span> <span class="fl">0.1</span><span class="fu">,</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>    <span class="dt">"top_p"</span><span class="fu">:</span> <span class="dv">1</span><span class="fu">,</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>    <span class="dt">"max_tokens"</span><span class="fu">:</span> <span class="dv">16000</span><span class="fu">,</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>    <span class="dt">"n"</span><span class="fu">:</span> <span class="dv">1</span><span class="fu">,</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>    <span class="dt">"stream"</span><span class="fu">:</span> <span class="kw">true</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Once again, formatting the system prompt for readability:</p>
+<div class="callout callout-style-default callout-note no-icon callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-5-contents" aria-controls="callout-5" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Language Model API System Prompt
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-5" class="callout-5-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<pre class="text"><code>Follow Microsoft content policies.
+Avoid content that violates copyrights.
+If you are asked to generate content that is harmful, hateful, racist, sexist, lewd, or violent, only respond with "Sorry, I can't assist with that."
+Keep your answers short and impersonal.
+Use Markdown formatting in your answers.
+Make sure to include the programming language name at the start of the Markdown code blocks.
+Avoid wrapping the whole response in triple backticks.
+The user works in an IDE called Visual Studio Code which has a concept for editors with open files, integrated unit test support, an output pane that shows the output of running the code as well as an integrated terminal.
+The active document is the source code the user is looking at right now.
+You can only give one reply for each conversation turn.</code></pre>
+</div>
+</div>
+</div>
+<p><strong>The verdict: completely different system prompts.</strong></p>
+<p>Chat gets a comprehensive system prompt with detailed instructions about tools, file editing, and workspace context. The Language Model API gets a minimal prompt focused on basic content policies.</p>
+<p>Key differences:</p>
+<ul>
+<li><strong>System prompt</strong>: Chat has ~200 lines of instructions, API has ~10 lines</li>
+<li><strong>Context injection</strong>: Chat auto-adds environment info, API gives you full control</li>
+<li><strong>Temperature</strong>: Chat uses 0, API defaults to 0.1</li>
+</ul>
+<p><strong>Bottom line:</strong> The Language Model API evaluates a different system than what users experience in chat. Our best remaining option now is option 3 - automating VSCode commands to control the actual chat interface.</p>
+</section>
+</section>
+<section id="hacking-vscode-commands" class="level2">
+<h2 class="anchored" data-anchor-id="hacking-vscode-commands">Hacking VSCode Commands</h2>
+<p>Since the Language Model API won’t work, I needed to find a way to control VSCode’s chat interface programmatically. Most VSCode actions can be triggered via <a href="https://code.visualstudio.com/api/references/commands">commands</a>. While not all of them are explicitly documented, the rest can be found in <a href="https://code.visualstudio.com/api/references/commands#simple-commands"><code>keybindings.json</code></a>.</p>
+<p>I extracted all chat commands from VSCode’s keybindings with a simple grep:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-o</span> <span class="st">'workbench\.action\.chat\.[^"]*'</span> keybindings.json <span class="kw">|</span> <span class="fu">sort</span> <span class="at">-u</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>This found 50+ commands:</p>
+<div class="callout callout-style-default callout-note no-icon callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-6-contents" aria-controls="callout-6" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+workbench.action.chat commands
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-6" class="callout-6-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<pre class="text"><code>workbench.action.chat.acceptTool
+workbench.action.chat.addDynamicVariable
+workbench.action.chat.addParticipant
+workbench.action.chat.applyInEditor
+workbench.action.chat.assignSelectedAgent
+workbench.action.chat.attach.instructions
+workbench.action.chat.attachContext
+workbench.action.chat.cancel
+workbench.action.chat.changeModel
+workbench.action.chat.clearHistory
+workbench.action.chat.clearInputHistory
+workbench.action.chat.configure.instructions
+workbench.action.chat.configure.prompts
+workbench.action.chat.configureCodeCompletions
+workbench.action.chat.copyAll
+workbench.action.chat.copyItem
+workbench.action.chat.focus
+workbench.action.chat.focusInput
+workbench.action.chat.hideSetup
+workbench.action.chat.history
+workbench.action.chat.holdToVoiceChatInChatView
+workbench.action.chat.inlineVoiceChat
+workbench.action.chat.insertCodeBlock
+workbench.action.chat.installProviderForVoiceChat
+workbench.action.chat.manage.mode
+workbench.action.chat.manageOverages
+workbench.action.chat.manageSettings
+workbench.action.chat.newChat
+workbench.action.chat.nextCodeBlock
+workbench.action.chat.nextFileTree
+workbench.action.chat.open
+workbench.action.chat.openAgent
+workbench.action.chat.openAsk
+workbench.action.chat.openEdit
+workbench.action.chat.openModelPicker
+workbench.action.chat.openQuotaExceededDialog
+workbench.action.chat.previousCodeBlock
+workbench.action.chat.previousFileTree
+workbench.action.chat.quickVoiceChat
+workbench.action.chat.readChatResponseAloud
+workbench.action.chat.redoEdit
+workbench.action.chat.resetTrustedTools
+workbench.action.chat.run-in-new-chat.prompt.current
+workbench.action.chat.run.prompt.current
+workbench.action.chat.run.prompt
+workbench.action.chat.runInTerminal
+workbench.action.chat.save-to-prompt
+workbench.action.chat.sendToNewChat
+workbench.action.chat.showExtensionsUsingCopilot
+workbench.action.chat.startVoiceChat
+workbench.action.chat.stopListening
+workbench.action.chat.stopListeningAndSubmit
+workbench.action.chat.stopReadChatItemAloud
+workbench.action.chat.submit
+workbench.action.chat.submitWithCodebase
+workbench.action.chat.submitWithoutDispatching
+workbench.action.chat.switchToNextModel
+workbench.action.chat.toggle
+workbench.action.chat.toggleAgentMode
+workbench.action.chat.toggleRequestPaused
+workbench.action.chat.triggerSetup
+workbench.action.chat.triggerSetupFromAccounts
+workbench.action.chat.triggerSetupWithoutDialog
+workbench.action.chat.undoEdit
+workbench.action.chat.undoEdits
+workbench.action.chat.upgradePlan
+workbench.action.chat.voiceChatInChatView</code></pre>
+</div>
+</div>
+</div>
+<p>After some experimentation, the key ones for automation:</p>
+<ul>
+<li><code>workbench.action.chat.newChat</code> - Start fresh conversation</li>
+<li><code>workbench.action.chat.attachFile</code> - Attach prompt file</li>
+<li><code>workbench.action.chat.open</code> - Focus and send message to chat</li>
+<li><code>workbench.action.chat.export</code> - Export chat to JSON</li>
+</ul>
+<section id="building-the-evaluation-loop" class="level3">
+<h3 class="anchored" data-anchor-id="building-the-evaluation-loop">Building the Evaluation Loop</h3>
+<p>The automation flow is straightforward. For each record in the evaluation dataset:</p>
+<ol type="1">
+<li>Start a new chat</li>
+<li>Attach the prompt file</li>
+<li>Send the test input</li>
+<li>Wait for completion</li>
+<li>Export and save results</li>
+</ol>
+<p>Here’s the core loop:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode typescript code-with-copy"><code class="sourceCode typescript"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> promptUri <span class="op">=</span> vscode<span class="op">.</span><span class="at">window</span><span class="op">.</span><span class="at">activeTextEditor</span><span class="op">?.</span><span class="at">document</span><span class="op">.</span><span class="at">uri</span><span class="op">;</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> resultsFile <span class="op">=</span> <span class="cf">await</span> <span class="fu">initResultsFile</span>(<span class="bu">root</span><span class="op">,</span> promptUri)<span class="op">;</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (<span class="kw">const</span> rec <span class="kw">of</span> records) {</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="kw">typeof</span> rec<span class="op">.</span><span class="at">input</span> <span class="op">!==</span> <span class="st">'string'</span>) <span class="cf">continue</span><span class="op">;</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">await</span> vscode<span class="op">.</span><span class="at">commands</span><span class="op">.</span><span class="fu">executeCommand</span>(<span class="st">'workbench.action.chat.newChat'</span>)<span class="op">;</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">await</span> vscode<span class="op">.</span><span class="at">commands</span><span class="op">.</span><span class="fu">executeCommand</span>(<span class="st">'workbench.action.chat.attachFile'</span><span class="op">,</span> promptUri)<span class="op">;</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">await</span> vscode<span class="op">.</span><span class="at">commands</span><span class="op">.</span><span class="fu">executeCommand</span>(<span class="st">'workbench.action.chat.open'</span><span class="op">,</span> rec<span class="op">.</span><span class="at">input</span>)<span class="op">;</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">await</span> <span class="fu">sleep</span>(rec<span class="op">.</span><span class="at">waitMs</span>)<span class="op">;</span>  <span class="co">// let the chat finish, as we cannot query the status</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">await</span> vscode<span class="op">.</span><span class="at">commands</span><span class="op">.</span><span class="fu">executeCommand</span>(<span class="st">'workbench.action.chat.export'</span>)<span class="op">;</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">await</span> <span class="fu">sleep</span>(<span class="dv">500</span>)<span class="op">;</span>  <span class="co">// give VS Code time to write the file</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> exportDir <span class="op">=</span> path<span class="op">.</span><span class="fu">dirname</span>(promptUri<span class="op">.</span><span class="at">fsPath</span>)<span class="op">;</span> <span class="co">// default destination</span></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">await</span> <span class="fu">collectAndAppendChatExport</span>(exportDir<span class="op">,</span> resultsFile)<span class="op">;</span></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+</section>
+<section id="example-country-capitals" class="level2">
+<h2 class="anchored" data-anchor-id="example-country-capitals">Example: Country Capitals</h2>
+<p>Let’s test this with a simple prompt that takes a country name and returns its capital:</p>
+<p><code>capital.prompt.md</code></p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="an">mode:</span><span class="co"> agent</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="an">tools:</span><span class="co"> []</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>The user provides a country and you should answer with only the capital of that country.</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The dataset format is simple - each test case needs: - <code>input</code>: The message to send to the prompt - <code>waitMs</code>: How long to wait for the response (we can’t detect completion)</p>
+<p><code>dataset.json</code></p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode json code-with-copy"><code class="sourceCode json"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="ot">[</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span><span class="dt">"input"</span><span class="fu">:</span> <span class="st">"France"</span><span class="fu">,</span> <span class="dt">"waitMs"</span><span class="fu">:</span> <span class="dv">4000</span><span class="fu">,</span> <span class="dt">"capital"</span><span class="fu">:</span> <span class="st">"Paris"</span><span class="fu">}</span><span class="ot">,</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span><span class="dt">"input"</span><span class="fu">:</span> <span class="st">"Japan"</span><span class="fu">,</span> <span class="dt">"waitMs"</span><span class="fu">:</span> <span class="dv">4000</span><span class="fu">,</span> <span class="dt">"capital"</span><span class="fu">:</span> <span class="st">"Tokyo"</span><span class="fu">}</span><span class="ot">,</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span><span class="dt">"input"</span><span class="fu">:</span> <span class="st">"Spain"</span><span class="fu">,</span> <span class="dt">"waitMs"</span><span class="fu">:</span> <span class="dv">4000</span><span class="fu">,</span> <span class="dt">"capital"</span><span class="fu">:</span> <span class="st">"Madrid"</span><span class="fu">}</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="ot">]</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Running the extension processes each test case and exports the results to <code>.github/evals/&lt;prompt&gt;/&lt;datetime&gt;.json</code>. Then we can evaluate the responses:</p>
+<p><code>eval_capital.py</code></p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>dataset <span class="op">=</span> json.loads(Path(sys.argv[<span class="dv">1</span>]).read_text())</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>results <span class="op">=</span> json.loads(Path(sys.argv[<span class="dv">2</span>]).read_text())</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>correct <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> record, result_chat <span class="kw">in</span> <span class="bu">zip</span>(dataset, results):</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>    answer <span class="op">=</span> result_chat[<span class="st">"requests"</span>][<span class="dv">0</span>][<span class="st">"response"</span>][<span class="dv">0</span>][<span class="st">"value"</span>]</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>    correct <span class="op">+=</span> <span class="dv">1</span> <span class="op">*</span> (record[<span class="st">"capital"</span>] <span class="kw">in</span> answer)</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>accuracy <span class="op">=</span> correct <span class="op">/</span> <span class="bu">len</span>(dataset) <span class="op">*</span> <span class="dv">100</span></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Accuracy: </span><span class="sc">{</span>accuracy<span class="sc">:.2f}</span><span class="ss">% (</span><span class="sc">{</span>correct<span class="sc">}</span><span class="ss">/</span><span class="sc">{</span><span class="bu">len</span>(dataset)<span class="sc">}</span><span class="ss">)"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<pre class="text"><code>$ python eval_capital.py dataset.json .github/evals/capital/20250625-0840.json
+Accuracy: 100.00% (3/3)</code></pre>
+</section>
+<section id="seeing-it-in-action" class="level2">
+<h2 class="anchored" data-anchor-id="seeing-it-in-action">Seeing it in Action</h2>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://github.com/bepuca/copilot-chat-eval/blob/main/demo.gif?raw=true" class="img-fluid figure-img"></p>
+<figcaption>Demo of the evaluation harness</figcaption>
+</figure>
+</div>
+<p><strong>The evaluation harness works!</strong> We can now systematically test our prompts and track performance over time.</p>
+<p>While our example uses simple string matching, you can make evaluation as sophisticated as needed - LLM-as-judge for complex outputs or multi-dimensional scoring, for instance. The key is starting simple and iterating.</p>
+</section>
+<section id="conclusion" class="level2">
+<h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
+<p><strong>Yes, we can evaluate VSCode Copilot Chat workflows</strong> - with significant limitations. Our approach has <strong>rough edges</strong>:</p>
+<ul>
+<li><strong>Sequential execution</strong> - Evaluations run one record at a time, no parallelization</li>
+<li><strong>Fixed wait times</strong> - We must guess how long each prompt takes since there’s no way to query completion status, leading to either wasted time or incomplete responses</li>
+<li><strong>Manual save dialog</strong> - Users must press Enter for each evaluation run since the export command doesn’t accept a file path</li>
+</ul>
+<p>And it only works for a subset of prompts:</p>
+<ul>
+<li><strong>Read-only</strong> - No side effects like file modifications or API calls. Running these in evaluation could cause real damage or spam external services.</li>
+<li><strong>Stateless</strong> - Don’t depend on current workspace changes or git state. Reproducing “review my current changes” would require setting up different workspace states for each test case.</li>
+<li><strong>Single-turn</strong> - One input, one output. Multi-turn conversations require simulating user responses, which adds significant complexity.</li>
+<li><strong>Time-insensitive</strong> - VSCode injects the current date into prompts. If your workflow depends on “today’s date,” results will vary between evaluation runs.</li>
+</ul>
+<p><strong>Despite these constraints, many useful workflows still fit within them</strong>: generating code snippets, writing documentation, analyzing error messages, or converting data formats. And crucially, having imperfect evaluation beats having none at all.</p>
+<p><strong>Where this helps most: early experimentation.</strong> When you’re testing whether a prompt idea even works, this approach provides basic feedback without building a full custom solution.</p>
+<p>The workflow becomes:</p>
+<ol type="1">
+<li>Build your prompt in VSCode using familiar tools.</li>
+<li>Create a test dataset with representative inputs.</li>
+<li>Build an evaluation script to derive metrics.</li>
+<li>Run the evaluation harness to get systematic feedback.</li>
+<li>Iterate based on concrete results rather than guesswork.</li>
+<li>Make data-driven decisions about next steps.</li>
+</ol>
+<p>This combination - fast workflow development in VSCode Copilot Chat + actual performance measurement - lets you quickly validate whether a workflow delivers real value and how reliable it is. With both pieces of data, you can make informed decisions about whether to invest in a custom solution.</p>
+<section id="further-work" class="level3">
+<h3 class="anchored" data-anchor-id="further-work">Further work</h3>
+<p>This extension is a proof of concept that works by creatively leveraging VSCode’s existing mechanisms. It may be brittle and break as the platform evolves, especially at the current pace of AI tooling development. However, having a working blueprint makes iteration easier than starting from scratch.</p>
+<p>With VSCode Chat going open source, there may be opportunities to build more robust evaluation tools with official support.</p>
+<p>The capital cities example was deliberately simple. Agent mode prompts can reference tools via hashtags (e.g., <code>#search_repositories</code>, <code>#file_search</code>), and these tool-using, agentic workflows are where the possibilities expand significantly. The evaluation harness captures outputs regardless of which tools were invoked, making it just as applicable to complex workflows as simple ones.</p>
+</section>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<ul>
+<li><a href="https://github.com/bepuca/copilot-chat-eval">Repo with the code: bepuca/copilot-chat-eval</a></li>
+<li><a href="https://code.visualstudio.com/docs/copilot/overview">VSCode Copilot Chat</a></li>
+<li><a href="https://code.visualstudio.com/docs/copilot/chat/chat-agent-mode">Agent mode</a></li>
+<li><a href="https://code.visualstudio.com/docs/copilot/chat/chat-agent-mode#_agent-mode-tools">Custom tools</a></li>
+<li><a href="https://code.visualstudio.com/docs/copilot/copilot-customization">Reusable prompts</a></li>
+<li><a href="https://modelcontextprotocol.io/introduction">Model Context Protocol (MCP)</a></li>
+<li><a href="https://hamel.dev/blog/posts/evals/">Your AI product needs Evals - Hamel’s Blog</a></li>
+<li><a href="https://www.bepuca.dev/posts/hdd-for-ai/">Hypothesis Driven Development for AI Products</a></li>
+<li><a href="https://code.visualstudio.com/api/extension-guides/language-model">VSCode Language Model API</a></li>
+<li><a href="https://code.visualstudio.com/api/get-started/your-first-extension">Building a VSCode extension</a></li>
+<li><a href="https://code.visualstudio.com/api/extension-guides/chat">Chat Extension API</a></li>
+<li><a href="https://code.visualstudio.com/blogs/2025/05/19/openSourceAIEditor">VSCode Chat Copilot going open source</a></li>
+<li><a href="https://lucumr.pocoo.org/2025/2/20/ugly-code/">Ugly Code and Dumb Things - Armin Ronacher</a></li>
+<li><a href="https://hamel.dev/blog/posts/prompt/#setting-up-mitmproxy">**** You, Show Me The Prompt - Hamel’s Blog</a></li>
+<li><a href="https://mitmproxy.org/">mitmproxy</a></li>
+<li><a href="https://code.visualstudio.com/api/references/commands">VSCode commands</a></li>
+<li><a href="https://github.com/bepuca/copilot-chat-eval">Copilot Chat Eval Repository</a></li>
+</ul>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/www\.bepuca\.dev");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
