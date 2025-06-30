@@ -531,7 +531,7 @@ And it only works for a subset of prompts:
 - **Single-turn** - One input, one output. Multi-turn conversations require simulating user responses, which adds significant complexity.
 - **Time-insensitive** - VSCode injects the current date into prompts. If your workflow depends on "today's date," results will vary between evaluation runs.
 
-Despite these constraints, many useful workflows still fit within them: generating code snippets, writing documentation, analyzing error messages, or converting data formats. And crucially, having imperfect evaluation beats having none at all.
+**Despite these constraints, many useful workflows still fit within them**: generating code snippets, writing documentation, analyzing error messages, or converting data formats. And crucially, having imperfect evaluation beats having none at all.
 
 **Where this helps most: early experimentation.** When you're testing whether a prompt idea even works, this approach provides basic feedback without building a full custom solution.
 
@@ -548,7 +548,7 @@ This combination - fast workflow development in VSCode Copilot Chat + actual per
 
 ### Further work
 
-This extension is a proof of concept that works by bending VSCode to our will. It may be brittle and break as the platform evolves, especially at the current pace of AI tooling development. However, having a working blueprint makes iteration easier than starting from scratch.
+This extension is a proof of concept that works by creatively leveraging VSCode's existing mechanisms. It may be brittle and break as the platform evolves, especially at the current pace of AI tooling development. However, having a working blueprint makes iteration easier than starting from scratch.
 
 With VSCode Chat going open source, there may be opportunities to build more robust evaluation tools with official support.
 
