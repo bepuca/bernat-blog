@@ -65,15 +65,23 @@ Let’s take a practical approach and focus on what’s realistically achievable
 
 Option 2 (Language Model API) seems most promising - if it works, we get clean programmatic access. But there's a critical question: does it use the same system prompt as the chat interface? If not, we're evaluating something different from what users experience.
 
-To find out, **we need to see what prompts VSCode actually sends**. Following [Hamel's approach](https://hamel.dev/blog/posts/prompt/#setting-up-mitmproxy), we'll use [mitmproxy](https://mitmproxy.org/) to intercept VSCode's API calls and examine the system prompts.
+To find out, **we need to see what prompts VSCode actually sends**. Following a similar approach as [Hamel's](https://hamel.dev/blog/posts/prompt/#setting-up-mitmproxy), we'll use [mitmproxy](https://mitmproxy.org/) to intercept VSCode's API calls and examine the system prompts.
 
 ### Setting Up mitmproxy
 
 To set up mitmproxy to intercept VSCode's API calls:
+
 1. Install: `uv tool install mitmproxy` or follow [official instructions](https://docs.mitmproxy.org/stable/overview/installation/)
 2. Start the browser-based UI: `mitmweb`
 3. Configure VSCode to use the proxy: Add `"http.proxy": "http://127.0.0.1:8080"` to `settings.json`. Or set up the "Http: Proxy" setting in the UI.
 4. Trust the certificate so requests succeed: Follow [mitmproxy's instructions](https://docs.mitmproxy.org/stable/concepts/certificates/) for your OS.
+
+::: {.callout-warning}
+## `mitmproxy` security note
+- `mitmproxy` creates a local user-specific CA certificate on first use. Keep that private key secure, since anyone who obtains it could decrypt your traffic.
+- These instructions run the proxy on localhost, all intercepted data stays on your machine, but be sure to configure only VS Code (not your entire system) to use the proxy so other applications aren’t inadvertently routed through it.
+- Once you’re finished inspecting calls, remember to remove or disable the proxy and untrust the certificate, especially if you’re handling sensitive code or secrets in the editor.
+:::
 
 ### What Chat Sends
 
@@ -335,7 +343,82 @@ I extracted all chat commands from VSCode's keybindings with a simple grep:
 grep -o 'workbench\.action\.chat\.[^"]*' keybindings.json | sort -u
 ```
 
-This found 50+ commands. After some experimentation, the key ones for automation:
+This found 50+ commands:
+
+::: {.callout-note collapse="true" icon=false}
+## workbench.action.chat commands
+```text
+workbench.action.chat.acceptTool
+workbench.action.chat.addDynamicVariable
+workbench.action.chat.addParticipant
+workbench.action.chat.applyInEditor
+workbench.action.chat.assignSelectedAgent
+workbench.action.chat.attach.instructions
+workbench.action.chat.attachContext
+workbench.action.chat.cancel
+workbench.action.chat.changeModel
+workbench.action.chat.clearHistory
+workbench.action.chat.clearInputHistory
+workbench.action.chat.configure.instructions
+workbench.action.chat.configure.prompts
+workbench.action.chat.configureCodeCompletions
+workbench.action.chat.copyAll
+workbench.action.chat.copyItem
+workbench.action.chat.focus
+workbench.action.chat.focusInput
+workbench.action.chat.hideSetup
+workbench.action.chat.history
+workbench.action.chat.holdToVoiceChatInChatView
+workbench.action.chat.inlineVoiceChat
+workbench.action.chat.insertCodeBlock
+workbench.action.chat.installProviderForVoiceChat
+workbench.action.chat.manage.mode
+workbench.action.chat.manageOverages
+workbench.action.chat.manageSettings
+workbench.action.chat.newChat
+workbench.action.chat.nextCodeBlock
+workbench.action.chat.nextFileTree
+workbench.action.chat.open
+workbench.action.chat.openAgent
+workbench.action.chat.openAsk
+workbench.action.chat.openEdit
+workbench.action.chat.openModelPicker
+workbench.action.chat.openQuotaExceededDialog
+workbench.action.chat.previousCodeBlock
+workbench.action.chat.previousFileTree
+workbench.action.chat.quickVoiceChat
+workbench.action.chat.readChatResponseAloud
+workbench.action.chat.redoEdit
+workbench.action.chat.resetTrustedTools
+workbench.action.chat.run-in-new-chat.prompt.current
+workbench.action.chat.run.prompt.current
+workbench.action.chat.run.prompt
+workbench.action.chat.runInTerminal
+workbench.action.chat.save-to-prompt
+workbench.action.chat.sendToNewChat
+workbench.action.chat.showExtensionsUsingCopilot
+workbench.action.chat.startVoiceChat
+workbench.action.chat.stopListening
+workbench.action.chat.stopListeningAndSubmit
+workbench.action.chat.stopReadChatItemAloud
+workbench.action.chat.submit
+workbench.action.chat.submitWithCodebase
+workbench.action.chat.submitWithoutDispatching
+workbench.action.chat.switchToNextModel
+workbench.action.chat.toggle
+workbench.action.chat.toggleAgentMode
+workbench.action.chat.toggleRequestPaused
+workbench.action.chat.triggerSetup
+workbench.action.chat.triggerSetupFromAccounts
+workbench.action.chat.triggerSetupWithoutDialog
+workbench.action.chat.undoEdit
+workbench.action.chat.undoEdits
+workbench.action.chat.upgradePlan
+workbench.action.chat.voiceChatInChatView
+```
+:::
+
+After some experimentation, the key ones for automation:
 
 - `workbench.action.chat.newChat` - Start fresh conversation
 - `workbench.action.chat.attachFile` - Attach prompt file
@@ -486,7 +569,7 @@ The capital cities example was deliberately simple. Agent mode prompts can refer
 - [Chat Extension API](https://code.visualstudio.com/api/extension-guides/chat)
 - [VSCode Chat Copilot going open source](https://code.visualstudio.com/blogs/2025/05/19/openSourceAIEditor)
 - [Ugly Code and Dumb Things - Armin Ronacher](https://lucumr.pocoo.org/2025/2/20/ugly-code/)
-- [Fuck You, Show Me The Prompt - Hamel's Blog](https://hamel.dev/blog/posts/prompt/#setting-up-mitmproxy)
+- [\*\*\*\* You, Show Me The Prompt - Hamel's Blog](https://hamel.dev/blog/posts/prompt/#setting-up-mitmproxy)
 - [mitmproxy](https://mitmproxy.org/)
 - [VSCode commands](https://code.visualstudio.com/api/references/commands)
 - [Copilot Chat Eval Repository](https://github.com/bepuca/copilot-chat-eval)
