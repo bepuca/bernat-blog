@@ -2,6 +2,7 @@
   {
     "listing": "/index.html",
     "items": [
+      "/posts/sharing-as-skills/index.html",
       "/posts/copilot-chat-eval/index.html",
       "/posts/hdd-for-ai/index.html"
     ]
