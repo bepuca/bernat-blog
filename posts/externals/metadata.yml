@@ -1,3 +1,10 @@
+- path: https://medium.com/data-science-at-microsoft/building-an-eval-harness-for-ai-voice-agents-fd236d620248?source=friends_link&sk=1ed5532ffbedd925d159768e5cea8138
+  title: "Building an eval harness for AI voice agents"
+  subtitle: "Lessons learned from prototype to production"
+  image: "posts/externals/assets/edd-voice.png"
+  date: "2026-04-07"
+  reading-time: 21
+
 - path: https://medium.com/data-science-at-microsoft/a-layered-approach-to-mlops-d935beefca2e?source=friends_link&sk=acb75fa6fc74a8db7e36f4262a3b0a06
   title: "A layered approach to MLOps"
   subtitle: "A tried and tested approach to structuring ML projects"
@@ -18,4 +25,3 @@
   image: "posts/externals/assets/obj-det-error.png"
   date: "2022-06-28"
   reading-time: 16
-
